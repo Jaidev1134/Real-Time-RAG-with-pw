@@ -71,6 +71,6 @@ python main.py
      curl -X POST "http://localhost:5000/query" -H "Content-Type: application/json" -d '{"query": "What are the latest Apple stock trends?"}'
 
 ##Contributor
-[Shiveshwar Kumar Sah]
+[Shiveshwar Kumar Sah, Jaidev Sharma]
 🤝 Open to collaboration! Feel free to contribute, open issues, or reach out with suggestions.
 
