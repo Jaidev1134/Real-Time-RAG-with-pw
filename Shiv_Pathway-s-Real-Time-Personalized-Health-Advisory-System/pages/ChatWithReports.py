@@ -16,7 +16,7 @@ st.error("**Note:** Always consult healthcare professionals for medical advice")
 
 llm = ChatGroq(
     groq_api_key=groq_api_key,
-    model_name="Llama3-8b-8192",
+    model_name="openai/gpt-oss-120b",
     temperature=0.3,
     max_tokens=2048
 )

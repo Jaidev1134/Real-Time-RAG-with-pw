@@ -1,0 +1,28 @@
+# Environment variables and secrets
+.env
+*.env
+.env.*
+!.env.example
+
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Vector stores & temporary runtime files
+faiss_index/
+*.mp3
+tmp/
+
+# OS and IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

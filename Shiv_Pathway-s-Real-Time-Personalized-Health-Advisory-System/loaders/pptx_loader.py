@@ -1,30 +1,27 @@
 import os
-from langchain_community.document_loaders import UnstructuredPowerPointLoader
+from pptx import Presentation
 
 def extract_pptx_data(data_dir):
     """Extract data from all PowerPoint (.pptx) files in the specified directory."""
-    all_ppt_data = {}  # Store data for all files
+    all_ppt_data = {}
 
     for file_name in os.listdir(data_dir):
         if file_name.endswith(".pptx"):
             file_path = os.path.join(data_dir, file_name)
-            loader = UnstructuredPowerPointLoader(file_path, mode="elements")
-            
             try:
-                file_docs = loader.load()
-                ppt_data = {}  # Store data for the current file by page
-
-                for doc in file_docs:
-                    page = doc.metadata.get("page_number", 0)  # Default to 0 if no page_number
-                    ppt_data[page] = ppt_data.get(page, "") + "\n\n" + doc.page_content
-
-                all_ppt_data[file_name] = ppt_data  # Associate pages with the file name
-
+                prs = Presentation(file_path)
+                slides_text = []
+                for slide in prs.slides:
+                    text = []
+                    for shape in slide.shapes:
+                        if shape.has_text_frame:
+                            for p in shape.text_frame.paragraphs:
+                                if p.text.strip():
+                                    text.append(p.text.strip())
+                    if text:
+                        slides_text.append("\n".join(text))
+                all_ppt_data[file_name] = slides_text
             except Exception as e:
                 print(f"Error processing {file_name}: {e}")
 
     return all_ppt_data
-
-
-# result = extract_pptx_data("./data")
-# print(result)

@@ -126,43 +126,58 @@ def load_all_data(data_dir):
     # Flatten the data structure to create a unified list
     for data in [pdf_data, csv_data, docx_data, pptx_data, xlsx_data]:
         for file_name, content in data.items():
-            for item in content:
-                docs.append({"source": file_name, "content": item})
+            if isinstance(content, dict):
+                for k, v in content.items():
+                    docs.append({"source": f"{file_name} ({k})", "content": str(v)})
+            elif isinstance(content, list):
+                for item in content:
+                    docs.append({"source": file_name, "content": str(item)})
+            else:
+                docs.append({"source": file_name, "content": str(content)})
     
     return docs
 
 # Directory containing files
-data_dir = r"D:\pathway\loaders\data"  # Use raw string to avoid escape sequence issues
+data_dir = os.path.join(os.path.dirname(__file__), "loaders", "data")
 
 # Check and initialize session state variables
-if "vector" not in st.session_state:
+if "vectors" not in st.session_state:
     try:
         # Initialize embeddings with Google Generative AI
         st.session_state.embeddings = GoogleGenerativeAIEmbeddings(
             api_key=google_api_key, 
-            model="models/embedding-001"
+            model="models/gemini-embedding-001"
         )
     except Exception as e:
         st.error(f"Error initializing Google Generative AI Embeddings: {e}")
         st.stop()
 
-    # Load and process documents
-    st.session_state.docs = load_all_data(data_dir)
-    st.session_state.text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    index_path = os.path.join(os.path.dirname(__file__), "faiss_index")
+    if os.path.exists(index_path):
+        st.session_state.vectors = FAISS.load_local(
+            index_path, 
+            st.session_state.embeddings,
+            allow_dangerous_deserialization=True
+        )
+    else:
+        # Load and process documents
+        st.session_state.docs = load_all_data(data_dir)
+        st.session_state.text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 
-    # Create Document objects for the text splitter
-    st.session_state.final_documents = st.session_state.text_splitter.split_documents(
-        [Document(page_content=doc["content"], metadata={"source": doc["source"]}) for doc in st.session_state.docs[:50]]
-    )
+        # Create Document objects for the text splitter
+        st.session_state.final_documents = st.session_state.text_splitter.split_documents(
+            [Document(page_content=str(doc["content"]), metadata={"source": str(doc["source"])}) for doc in st.session_state.docs[:15]]
+        )
 
-    # Create FAISS vector store
-    st.session_state.vectors = FAISS.from_documents(st.session_state.final_documents, st.session_state.embeddings)
+        # Create FAISS vector store
+        st.session_state.vectors = FAISS.from_documents(st.session_state.final_documents, st.session_state.embeddings)
+        st.session_state.vectors.save_local(index_path)
 
 # Streamlit app interface
 # st.title("ChatGroq Demo")
 llm = ChatGroq(
     groq_api_key=os.environ["GROQ_API_KEY"],
-    model_name="mixtral-8x7b-32768"
+    model_name="openai/gpt-oss-120b"
 )
 
 prompt = ChatPromptTemplate.from_template(
